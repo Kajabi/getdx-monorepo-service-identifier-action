@@ -22,7 +22,7 @@ inputs:
   fetch-depth:
     description: 'The depth of history to fetch for the consuming repository'
     required: false
-    default: "1"
+    default: "0"
 
 runs:
   using: "composite"
