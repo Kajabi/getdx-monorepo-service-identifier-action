@@ -41,7 +41,7 @@ jobs:
 
 | Name                    | Description                                                                        | Required | Default                                  |
 | ----------------------- | ---------------------------------------------------------------------------------- | -------- | ---------------------------------------- |
-| `getdx-instance-name`   | Instance name for getdx (e.g. <instance-name>.getdx.net)                           | `true`   |                                          |
+| `getdx-instance-name`   | Instance name for getdx (e.g. {instance-name}.getdx.net)                           | `true`   |                                          |
 | `getx-token`            | Token for GetDX API Calls (use Github Secrets for security)                        | `true`   |                                          |
 | `catalog-filename`       | The name of the Backstage catalog file to search for in the tree                    | `false`  | `catalog-info.yaml`                      |
 | `fetch-depth`           | The depth of history to fetch in the repo                                          | `false`  | `0`                                      |
