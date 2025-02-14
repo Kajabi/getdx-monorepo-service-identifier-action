@@ -69,18 +69,20 @@ runs:
           echo "DEBUG: Debug is on so no API call will be made. Payload would be:"
           echo "JSON_PAYLOAD: $json_payload"
         else
-          curl -X POST \
+          RESPONSE_CODE=$(curl 
+            -X POST \
             https://${{ inputs.getdx-instance-name }}.getdx.net/api/deployments.setPullServices \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ inputs.getdx-token }}" \
             -d "$json_payload"
+          )
 
           if [ "$RESPONSE_CODE" -ne 200 ]; then
-            ERROR_MESSAGE=$(jq -r '.message' response.txt)
-            ERROR_TYPE=$(jq -r '.error' response.txt)
+            ERROR_MESSAGE=$(jq -r '.message' response.txt 2>/dev/null || echo "Unknown error") 
+            ERROR_TYPE=$(jq -r '.error' response.txt 2>/dev/null || echo "Unknown error") 
 
-            echo "Error response from API: HTTP status code $RESPONSE"
-            echo "Error type: $ERROR_TYPE"
+            echo "Error response from API: HTTP status code $RESPONSE_CODE"
+            echo "Error type: $ERROR_TYPE" 
             echo "Error message: $ERROR_MESSAGE"
 
             exit 1 # Fail the step explicitly if an error is detected 
