@@ -1,6 +1,6 @@
 # 📖 GitHub Action for Identifying Monorepo Services to send to GetDX
 
-This GitHub Action is used to identify monorepository services and send `setPullServices` requests to the GetDX platform. 
+This GitHub Action is used to identify monorepository services and send `setPullServices` requests to the [GetDX](https://getdx.com) platform. 
 
 > Based on this help article: https://help.getdx.com/en/articles/7669458-deployments#h_7d23ab886c).
 
@@ -12,7 +12,7 @@ This GitHub Action is used to identify monorepository services and send `setPull
 
 This Action leverages `catalog-info.yaml` documents utilized in the [Backstage](https://backstage.io) framework to identify the service name based on the folder-tree for the file(s) being augmented in a pull request. It will pull a list of the files that have been altered upon PR merge, traverse up the directory tree to find the closeset `catalog-info.yaml` document, and then utilize the `metadata.name` attribute of the top-level `kind: Component`.
 
-It then will send a `setPullServices` request with the affected services to GetDX.
+It then will send a `setPullServices` request with the affected services to [GetDX](https://getdx.com).
 
 ## Usage
 
@@ -36,7 +36,6 @@ jobs:
           getdx-instance-name: 'YOUR_INSTANCE_NAME'
           getdx-token: 'YOUR_TOKEN' # Utilize Github Secrets for security
 ```
-
 
 ## Configuration
 
