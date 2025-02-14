@@ -29,16 +29,17 @@ while [ "$search_dir" != "/" ]; do
           echo "Found file: $search_dir/$target_filename"
         fi
 
-        # Extract metadata.name using awk
+        # Extract first metadata.name under kind: Component
         name_value=$(awk '
-            /metadata:/ {found=1} 
-            found && /name:/ {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
+            $1 == "kind:" && $2 == "Component" {found=1} 
+            found && $1 == "metadata:" {in_metadata=1} 
+            in_metadata && $1 == "name:" {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
 
         if [ -n "$name_value" ]; then
             echo "$name_value"
             exit 0
         else
-            echo "Error: metadata.name not found in $target_filename"
+            echo "Error: No Component kind or metadata.name found in $target_filename"
             exit 1
         fi
     fi
