@@ -2,7 +2,7 @@
 
 This GitHub Action is used to identify monorepository services and send `setPullServices` requests to the [GetDX](https://getdx.com) platform. 
 
-> Based on this help article: https://help.getdx.com/en/articles/7669458-deployments#h_7d23ab886c).
+> Based on this [help article](https://help.getdx.com/en/articles/7669458-deployments#h_7d23ab886c).
 
 ## Versions
 
