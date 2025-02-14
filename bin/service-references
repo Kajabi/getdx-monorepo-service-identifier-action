@@ -1,40 +1,33 @@
 #!/bin/bash
 
 # Check if correct number of arguments are provided
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-    echo "Usage: $0 <file_path> <target_filename> [stop_directory_pattern]"
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <file_path> <target_filename>"
     exit 1
 fi
 
 DEBUG_ACTION=${DEBUG_ACTION:-"false"}
 file_path="$1"
 target_filename="$2"
-stop_pattern="${3:-/}"  # Default stop at root `/` if no stop pattern is provided
 
 # Get the directory of the given file path
 search_dir=$(dirname "$file_path")
 
-# Traverse upwards until the file is found or we reach the stop pattern
+# Traverse upwards until the file is found
 while [ "$search_dir" != "/" ]; do
-    # Stop if the directory matches the stop pattern
-    if [[ "$search_dir" == $stop_pattern ]]; then
-        if [ "$DEBUG_ACTION" == "true" ]; then
-            echo "Reached stop directory: $search_dir. Stopping search."
-        fi
-        break
-    fi
-
     if [ -f "$search_dir/$target_filename" ]; then
         if [ "$DEBUG_ACTION" == "true" ]; then
           echo "Found file: $search_dir/$target_filename"
         fi
 
         # Extract first metadata.name under kind: Component
+        # This ensures we don't take a `System` entities name
         name_value=$(awk '
             $1 == "kind:" && $2 == "Component" {found=1} 
             found && $1 == "metadata:" {in_metadata=1} 
             in_metadata && $1 == "name:" {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
 
+        // If name_value is not empty, print it and exit
         if [ -n "$name_value" ]; then
             echo "$name_value"
             exit 0
@@ -48,6 +41,6 @@ while [ "$search_dir" != "/" ]; do
     search_dir=$(dirname "$search_dir")
 done
 
-# If no file is found before reaching the stop directory
-echo "No file named '$target_filename' found before reaching '$stop_pattern'."
+# If no file is found
+echo "No file named '$target_filename' found."
 exit 1

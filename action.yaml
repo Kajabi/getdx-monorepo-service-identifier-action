@@ -12,9 +12,6 @@ inputs:
   # getdx-token:
   #   description: 'Token for GetDX API Calls'
   #   required: true
-  monorepo-package-path:
-    description: 'The root path to your monorepo packages (e.g. `packages`)'
-    required: true
   catalog-filename:
     description: 'The name of the catalog file to search for in the tree (e.g. `catalog-info.yaml`)'
     required: false
@@ -46,7 +43,7 @@ runs:
       run: |
         services=""
         while IFS= read -r file; do
-          service=$(${{ github.action_path }}/bin/service-references $file ${{ inputs.catalog-filename }} ${{ inputs.monorepo-package-path }})
+          service=$(${{ github.action_path }}/bin/service-references $file ${{ inputs.catalog-filename }})
           services="$services $service"
         done < changed_files.txt
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
