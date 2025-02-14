@@ -30,7 +30,7 @@ runs:
     - name: Checkout code
       uses: actions/checkout@v4
       with: 
-        ref: ${{ github.ref }}
+        fetch-depth: ${{ inputs.fetch-depth }}
 
     - name: Get list of changed files
       id: getfile
