@@ -46,9 +46,8 @@ runs:
       run: |
         services=""
         while IFS= read -r file; do
-          echo "Processing file: $file"
           service=$(${{ github.action_path }}/bin/service-references $file ${{ inputs.catalog-filename }} ${{ inputs.monorepo-package-path }})
-          echo "Service: $service"
+          services="$services $service"
         done < changed_files.txt
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "Affected services: $unique_services"
