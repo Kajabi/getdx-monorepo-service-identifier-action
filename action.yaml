@@ -5,13 +5,12 @@ description: |
 author: 'internal-platform-and-automation'
 
 inputs:
-  # TODO: Add back in once verified
-  # getdx-instance-name:
-  #   description: 'Instance name for getdx (e.g. <instance-name>.getdx.net)'
-  #   required: true
-  # getdx-token:
-  #   description: 'Token for GetDX API Calls'
-  #   required: true
+  getdx-instance-name:
+    description: 'Instance name for getdx (e.g. <instance-name>.getdx.net)'
+    required: true
+  getdx-token:
+    description: 'Token for GetDX API Calls'
+    required: true
   catalog-filename:
     description: 'The name of the catalog file to search for in the tree (e.g. `catalog-info.yaml`)'
     required: false
@@ -48,3 +47,33 @@ runs:
         done < changed_files.txt
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "Affected services: $unique_services"
+        echo "::set-output name=affected_services::$unique_services"
+
+    - name: Post affected services
+      id: post-services
+      shell: bash
+      run: |
+        json_payload=$(jq -n \
+          --arg github_pull_id ${{ github.event.pull_request.id }} \
+          --arg services '[${{ steps.services.outputs.affected_services }}]' \
+          '{
+             github_pull_id: $github_pull_id,
+             services: $services
+           }')
+
+        curl -X POST \
+          http://${{ inputs.getdx-instance-name }}.getdx.net/api/deployments.setPullServices \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${{ inputs.getdx-token }}" \
+          -d "$json_payload"
+
+        if [ "$RESPONSE_CODE" -ne 200 ]; then
+          ERROR_MESSAGE=$(jq -r '.message' response.txt)
+          ERROR_TYPE=$(jq -r '.error' response.txt)
+
+          echo "Error response from API: HTTP status code $RESPONSE"
+          echo "Error type: $ERROR_TYPE"
+          echo "Error message: $ERROR_MESSAGE"
+
+          exit 1 # Fail the step explicitly if an error is detected 
+        fi
