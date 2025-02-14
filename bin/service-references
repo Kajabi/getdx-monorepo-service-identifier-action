@@ -6,7 +6,6 @@ if [ "$#" -lt 2 ]; then
     exit 1
 fi
 
-DEBUG_ACTION=${DEBUG_ACTION:-"false"}
 file_path="$1"
 target_filename="$2"
 
@@ -16,10 +15,6 @@ search_dir=$(dirname "$file_path")
 # Traverse upwards until the file is found
 while [ "$search_dir" != "/" ]; do
     if [ -f "$search_dir/$target_filename" ]; then
-        if [ "$DEBUG_ACTION" == "true" ]; then
-          echo "Found file: $search_dir/$target_filename"
-        fi
-
         # Extract first metadata.name under kind: Component
         # This ensures we don't take a `System` entities name
         name_value=$(awk '

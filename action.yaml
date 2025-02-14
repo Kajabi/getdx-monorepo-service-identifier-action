@@ -30,8 +30,7 @@ runs:
     - name: Checkout code
       uses: actions/checkout@v4
       with: 
-        fetch-depth: $(( ${{ github.event_name == 'pull_request' && github.event.pull_request.commits || 0 }} + 1 ))
-        # fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ github.ref }}
 
     - name: Get list of changed files
       id: getfile
@@ -44,8 +43,6 @@ runs:
     - name: Identify affected services
       id: identify
       shell: bash
-      env:
-        DEBUG_ACTION: ${{ inputs.debug }}
       run: |
         services=""
         while IFS= read -r file; do
@@ -62,7 +59,7 @@ runs:
       run: |
         json_payload=$(jq -n \
           --arg github_pull_id ${{ github.event.pull_request.id }} \
-          --arg services '[$AFFECTED_SERVICES]' \
+          --arg services '[${{ env.AFFECTED_SERVICES }}]' \
           '{
              github_pull_id: $github_pull_id,
              services: $services
