@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: getdx-monorepo-service-identifier-action
+  description: |
+    Reusable action for sending service identifiers to GetDX in a monorepo. Utilizes `catalog-info.yaml` documents as part 
+    of the Backstage eco-system to identify services. 
+  annotations:
+    jira/project-key: IPA
+    backstage.io/source-location: url:https://github.com/Kajabi/getdx-monorepo-service-identifier-action
+    backstage.io/techdocs-ref: url:https://github.com/Kajabi/getdx-monorepo-service-identifier-action/tree/main
+    github.com/project-slug: Kajabi/getdx-monorepo-service-identifier-action
+  tags:
+    - github
+    - action
+    - getdx
+    - monorepo
+    - backstage
+    - radiator
+spec:
+  type: github-action
+  owner: internal-platform-and-automation
+  lifecycle: experimental

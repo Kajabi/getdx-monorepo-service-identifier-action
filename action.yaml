@@ -1,0 +1,48 @@
+name: 'GetDX Monorepo Service Identifier Action'
+description: |
+  Reusable action for sending service identifiers to GetDX in a monorepo. Utilizes `catalog-info.yaml` documents as part 
+  of the Backstage eco-system to identify services.
+author: 'internal-platform-and-automation'
+
+inputs:
+  # TODO: Add back in once verified
+  # getdx-instance-name:
+  #   description: 'Instance name for getdx (e.g. <instance-name>.getdx.net)'
+  #   required: true
+  # getdx-token:
+  #   description: 'Token for GetDX API Calls'
+  #   required: true
+  monorepo-package-path:
+    description: 'The root path to your monorepo packages (e.g. `packages`)'
+    required: true
+  catalog-filename:
+    description: 'The name of the catalog file to search for in the tree (e.g. `catalog-info.yaml`)'
+    required: false
+    default: 'catalog-info.yaml'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: 
+        fetch-depth: 0 
+
+    - name: Get list of changed files
+      id: getfile
+      shell: bash
+      run: |
+        files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} --)
+        echo "Changed files: $files"
+        echo "$files" >> changed_files.txt
+
+    - name: Identify affected services
+      id: identify
+      shell: bash
+      run: |
+        services=""
+        while IFS= read -r file; do
+          service=$(./bin/service-references $file ${{ inputs.catalog-filename }} ${{ inputs.monorepo-package-path }})
+        done < changed_files.txt
+        unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        echo "Affected services: $unique_services"

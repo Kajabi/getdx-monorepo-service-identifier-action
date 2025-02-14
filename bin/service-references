@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Check if correct number of arguments are provided
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    echo "Usage: $0 <file_path> <target_filename> [stop_directory_pattern]"
+    exit 1
+fi
+
+DEBUG_ACTION=${DEBUG_ACTION:-"false"}
+file_path="$1"
+target_filename="$2"
+stop_pattern="${3:-/}"  # Default stop at root `/` if no stop pattern is provided
+
+# Get the directory of the given file path
+search_dir=$(dirname "$file_path")
+
+# Traverse upwards until the file is found or we reach the stop pattern
+while [ "$search_dir" != "/" ]; do
+    # Stop if the directory matches the stop pattern
+    if [[ "$search_dir" == $stop_pattern ]]; then
+        if [ "$DEBUG_ACTION" == "true" ]; then
+            echo "Reached stop directory: $search_dir. Stopping search."
+        fi
+        break
+    fi
+
+    if [ -f "$search_dir/$target_filename" ]; then
+        if [ "$DEBUG_ACTION" == "true" ]; then
+          echo "Found file: $search_dir/$target_filename"
+        fi
+
+        # Extract metadata.name using awk
+        name_value=$(awk '
+            /metadata:/ {found=1} 
+            found && /name:/ {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
+
+        if [ -n "$name_value" ]; then
+            echo "$name_value"
+            exit 0
+        else
+            echo "Error: metadata.name not found in $target_filename"
+            exit 1
+        fi
+    fi
+
+    # Move one level up
+    search_dir=$(dirname "$search_dir")
+done
+
+# If no file is found before reaching the stop directory
+echo "No file named '$target_filename' found before reaching '$stop_pattern'."
+exit 1

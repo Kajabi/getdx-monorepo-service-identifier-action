@@ -1,0 +1,26 @@
+name: Publish TechDocs Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/techdocs.yaml"
+
+jobs:
+  publish-techdocs-site:
+    name: Publish Techdocs
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate and Publish
+        uses: Kajabi/radiator-techdocs-action@v3
+        with:
+          entity-name: getdx-monorepo-service-identifier-action
+          aws-access-key-id: ${{ secrets.TECHDOCS_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.TECHDOCS_AWS_SECRET_ACCESS_KEY }}
+
