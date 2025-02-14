@@ -27,7 +27,7 @@ while [ "$search_dir" != "/" ]; do
             found && $1 == "metadata:" {in_metadata=1} 
             in_metadata && $1 == "name:" {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
 
-        // If name_value is not empty, print it and exit
+        # If name_value is not empty, print it and exit
         if [ -n "$name_value" ]; then
             echo "$name_value"
             exit 0

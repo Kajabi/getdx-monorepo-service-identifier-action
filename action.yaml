@@ -19,6 +19,10 @@ inputs:
     description: 'The depth of history to fetch for the consuming repository'
     required: false
     default: "0"
+  debug:
+    description: 'Enable debug mode'
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -39,6 +43,8 @@ runs:
     - name: Identify affected services
       id: identify
       shell: bash
+      env:
+        DEBUG_ACTION: ${{ inputs.debug }}
       run: |
         services=""
         while IFS= read -r file; do
@@ -47,7 +53,7 @@ runs:
         done < changed_files.txt
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "Affected services: $unique_services"
-        echo "::set-output name=affected_services::$unique_services"
+        echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Post affected services
       id: post-services
@@ -55,25 +61,30 @@ runs:
       run: |
         json_payload=$(jq -n \
           --arg github_pull_id ${{ github.event.pull_request.id }} \
-          --arg services '[${{ steps.services.outputs.affected_services }}]' \
+          --arg services '[$AFFECTED_SERVICES]' \
           '{
              github_pull_id: $github_pull_id,
              services: $services
            }')
 
-        curl -X POST \
-          http://${{ inputs.getdx-instance-name }}.getdx.net/api/deployments.setPullServices \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ inputs.getdx-token }}" \
-          -d "$json_payload"
+        if [ "${{ inputs.debug }}" == "true" ]; then
+          echo "DEBUG: Debug is on so no API call will be made. Payload would be:"
+          echo "JSON_PAYLOAD: $json_payload"
+        else
+          curl -X POST \
+            http://${{ inputs.getdx-instance-name }}.getdx.net/api/deployments.setPullServices \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ inputs.getdx-token }}" \
+            -d "$json_payload"
 
-        if [ "$RESPONSE_CODE" -ne 200 ]; then
-          ERROR_MESSAGE=$(jq -r '.message' response.txt)
-          ERROR_TYPE=$(jq -r '.error' response.txt)
+          if [ "$RESPONSE_CODE" -ne 200 ]; then
+            ERROR_MESSAGE=$(jq -r '.message' response.txt)
+            ERROR_TYPE=$(jq -r '.error' response.txt)
 
-          echo "Error response from API: HTTP status code $RESPONSE"
-          echo "Error type: $ERROR_TYPE"
-          echo "Error message: $ERROR_MESSAGE"
+            echo "Error response from API: HTTP status code $RESPONSE"
+            echo "Error type: $ERROR_TYPE"
+            echo "Error message: $ERROR_MESSAGE"
 
-          exit 1 # Fail the step explicitly if an error is detected 
+            exit 1 # Fail the step explicitly if an error is detected 
+          fi
         fi
