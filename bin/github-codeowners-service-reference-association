@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+CODEOWNERS_FILE=".github/CODEOWNERS"
+
+# Check if a file argument is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <changed_files_list>"
+    exit 1
+fi
+
+CHANGED_FILES_FILE="$1"
+
+# Check if changed files list exists
+if [ ! -f "$CHANGED_FILES_FILE" ]; then
+    echo "Error: File '$CHANGED_FILES_FILE' not found!"
+    exit 1
+fi
+
+# Read CODEOWNERS file
+if [ ! -f "$CODEOWNERS_FILE" ]; then
+    echo "Error: CODEOWNERS file '$CODEOWNERS_FILE' not found!"
+    exit 1
+fi
+
+declare -A FILE_OWNERS
+
+# Read CODEOWNERS file and parse into an associative array
+while IFS= read -r line; do
+    # Ignore comments and empty lines
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+
+    # Extract file pattern and owner(s)
+    PATTERN=$(echo "$line" | awk '{print $1}')
+    OWNER=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
+
+    # Normalize pattern to remove leading slashes
+    PATTERN="${PATTERN#/}"
+
+    # Store pattern-owner mapping
+    FILE_OWNERS["$PATTERN"]="$OWNER"
+done < "$CODEOWNERS_FILE"
+
+# Function to normalize owners
+normalize_owner() {
+    local owner="$1"
+
+    if [[ "$owner" =~ ^@([^/]+)/(.+)$ ]]; then
+        echo "group-${BASH_REMATCH[1]}-${BASH_REMATCH[2]}"
+    elif [[ "$owner" =~ ^@(.+)$ ]]; then
+        echo "group-${BASH_REMATCH[1]}"
+    elif [[ "$owner" =~ ^[^@]+@[^@]+$ ]]; then
+        local email_user="${owner%@*}"
+        local email_domain="${owner#*@}"
+        local email_domain_sanitized="${email_domain//./-}"
+        echo "email-${email_user}-at-${email_domain_sanitized}"
+    else
+        echo "user-${owner}" # For non-group users
+    fi
+}
+
+# Read changed files list
+declare -A MATCHED_OWNERS
+while IFS= read -r changed_file; do
+    # Normalize changed file path (remove leading slash)
+    changed_file="${changed_file#/}"
+
+    for pattern in "${!FILE_OWNERS[@]}"; do
+        # Check if the changed file matches the pattern
+        if [[ "$changed_file" == $pattern || "$changed_file" == */$pattern || $pattern == */"$changed_file" ]]; then
+            owner="${FILE_OWNERS[$pattern]}"
+            normalized_owner=$(normalize_owner "$owner")
+            MATCHED_OWNERS["$normalized_owner"]=1
+        fi
+    done
+done < "$CHANGED_FILES_FILE"
+
+# Output unique matched owners
+for owner in "${!MATCHED_OWNERS[@]}"; do
+    echo "$owner"
+done

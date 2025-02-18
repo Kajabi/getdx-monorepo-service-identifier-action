@@ -11,6 +11,15 @@ inputs:
   getdx-token:
     description: 'Token for GetDX API Calls'
     required: true
+  service-association-type:
+    description: 'The type of service association to use (e.g. `backstage`)'
+    required: false
+    type: choice
+    default: 'backstage'
+    options: 
+    - backstage
+    - service-file
+    - codeowners
   catalog-filename:
     description: 'The name of the catalog file to search for in the tree (e.g. `catalog-info.yaml`)'
     required: false
@@ -40,15 +49,35 @@ runs:
         echo "Changed files: $files"
         echo "$files" >> changed_files.txt
 
-    - name: Identify affected services
-      id: identify
+    - name: Identify affected Backstage services
+      id: identify-backstage
       shell: bash
       run: |
         services=""
         while IFS= read -r file; do
-          service=$(${{ github.action_path }}/bin/service-references $file ${{ inputs.catalog-filename }})
+          service=$(${{ github.action_path }}/bin/backstage-service-reference-association $file ${{ inputs.catalog-filename }})
           services="$services $service"
         done < changed_files.txt
+        unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        echo "Affected services: $unique_services"
+        echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
+
+    - name: Identify affected services based on .service-associations file
+      id: identify-service-associations-file
+      shell: bash
+      run: |
+        services=""
+        services=$(${{ github.action_path }}/bin/getdx-file-service-reference-association changed_files.txt)
+        unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        echo "Affected services: $unique_services"
+        echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
+
+    - name: Identify affected services based on .github/CODEOWNERS file
+      id: identify-codeowners
+      shell: bash
+      run: |
+        services=""
+        services=$(${{ github.action_path }}/bin/github-codeowners-service-reference-association changed_files.txt)
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
