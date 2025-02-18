@@ -11,20 +11,22 @@ target_filename="$2"
 
 # Get the directory of the given file path
 search_dir=$(dirname "$file_path")
+echo "Searching for $target_filename in $search_dir"
 
 # Traverse upwards until the file is found
 while [ "$search_dir" != "/" ]; do
     if [ -f "$search_dir/$target_filename" ]; then
-        # Extract first metadata.name under kind: Component
-        # This ensures we don't take a `System` entities name
-        name_value=$(awk '
-            $1 == "kind:" && $2 == "Component" {found=1} 
-            found && $1 == "metadata:" {in_metadata=1} 
-            in_metadata && $1 == "name:" {print $2; exit}' "$search_dir/$target_filename" | tr -d ' ')
+        # Extract all metadata.name values under kind: Component
+        # This ensures we don't take a `System` entities name but
+        # we get all Component type entity associations
+        name_values=$(awk '
+            $1 == "kind:" && $2 == "Component" {found=1; next} 
+            found && $1 == "metadata:" {in_metadata=1; next} 
+            in_metadata && $1 == "name:" {print $2; found=0; in_metadata=0}' "$search_dir/$target_filename" | tr -d ' ')
 
         # If name_value is not empty, print it and exit
-        if [ -n "$name_value" ]; then
-            echo "$name_value"
+        if [ -n "$name_values" ]; then
+            echo "$name_values"
             exit 0
         else
             echo "Error: No Component kind or metadata.name found in $target_filename"
