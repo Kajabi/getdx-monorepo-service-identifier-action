@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+CODEOWNERS_FILE=".github/CODEOWNERS"
+
+# Check if a file argument is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <changed_files_list>"
+    exit 1
+fi
+
+# Ensure a file with changed files is provided, newline-separated
+CHANGED_FILES_FILE="$1"
+if [ ! -f "$CHANGED_FILES_FILE" ]; then
+    echo "Error: File '$CHANGED_FILES_FILE' not found."
+    exit 1
+fi
+
+declare -A FILE_OWNERS
+
+# Function to normalize owners into lowercase strings
+normalize_owner() {
+    local owner="$1"
+
+    # Convert @Group/team type owners into group-<group>-<team>
+    if [[ "$owner" =~ ^@([^/]+)/(.+)$ ]]; then
+        echo "group-${BASH_REMATCH[1]}-${BASH_REMATCH[2]}" | tr '[:upper:]' '[:lower:]'
+    # Convert @Group type owners into group-<group> 
+    elif [[ "$owner" =~ ^@([^/]+)$ ]]; then
+        echo "user-${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]'
+    # Convert email type owners into email-<local-part>-at-<domain-part>-dot-<tld-part>
+    elif [[ "$owner" =~ ^([^@]+)@([^@.]+)\.([^@]+)$ ]]; then
+        echo "email-${BASH_REMATCH[1]}-at-${BASH_REMATCH[2]}-dot-${BASH_REMATCH[3]}" | tr '[:upper:]' '[:lower:]'
+    # Fallback to lowercasing the owner
+    else
+        echo "$owner" | tr '[:upper:]' '[:lower:]'
+    fi
+}
+
+# Read CODEOWNERS file and store rules
+declare -A CODEOWNERS_RULES
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+    # Ignore comments and empty lines
+    [[ "$line" =~ ^\s*# || -z "$line" ]] && continue
+
+    # Extract pattern and owner
+    pattern=$(echo "$line" | awk '{print $1}')
+    owners=$(echo "$line" | cut -d' ' -f2-)
+
+    [[ -z "$pattern" || -z "$owners" ]] && continue  # Skip malformed lines
+
+    # Normalize owners
+    formatted_owners=()
+    for owner in $owners; do
+        formatted_owners+=("$(normalize_owner "$owner")")
+    done
+
+    # Store the association
+    CODEOWNERS_RULES["$pattern"]="${formatted_owners[*]}"
+done < "$CODEOWNERS_FILE"
+
+# Function to check if a file matches a pattern, follows CODEOWNER specs
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#example-of-a-codeowners-file
+matches_pattern() {
+    local file="$1"
+    local pattern="$2"
+
+    if [[ "$file" == "$pattern" ]]; then
+        return 0
+    elif [[ "$pattern" == */* ]]; then
+        # Handle directory-based matching
+        if [[ "$file" == $pattern* || "$file" == */$pattern* ]]; then
+            return 0
+        fi
+    elif [[ "$pattern" == *\** ]]; then
+        # Handle wildcard matching
+        local regex_pattern="${pattern//\*/.*}"
+        [[ "$file" =~ $regex_pattern ]] && return 0
+    fi
+    return 1
+}
+
+# Process each changed file and find its owner
+while IFS= read -r changed_file || [[ -n "$changed_file" ]]; do
+    best_match=""
+    best_match_owners=""
+
+    for pattern in "${!CODEOWNERS_RULES[@]}"; do
+        if matches_pattern "$changed_file" "$pattern"; then
+            best_match="$pattern"
+            best_match_owners="${CODEOWNERS_RULES[$pattern]}"
+        fi
+    done
+
+    if [[ -n "$best_match_owners" ]]; then
+        FILE_OWNERS["$changed_file"]="$best_match_owners"
+    fi
+done < "$CHANGED_FILES_FILE"
+
+# Print results
+for file in "${!FILE_OWNERS[@]}"; do
+    echo "${FILE_OWNERS[$file]}"
+done

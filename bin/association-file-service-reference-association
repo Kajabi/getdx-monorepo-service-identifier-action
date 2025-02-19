@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ASSOCIATIONS_FILE=".service-associations"
+
+# Make sure a file with the changed files list is provided (newline-separated)
+CHANGED_FILES_FILE="$1"
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 <changed_files_list>"
+    exit 1
+fi
+
+if [[ ! -f "$CHANGED_FILES_FILE" ]]; then
+    echo "Error: Changed files list '$CHANGED_FILES_FILE' not found."
+    exit 1
+fi
+
+if [[ ! -f "$ASSOCIATIONS_FILE" ]]; then
+    echo "Error: Service associations file '$ASSOCIATIONS_FILE' not found."
+    exit 1
+fi
+
+shopt -s extglob globstar  # Enable extended globbing and recursive globs
+
+declare -A SERVICE_PATTERNS
+NEGATED_PATTERNS=()
+DEFAULT_SERVICE=""
+
+# Convert service association patterns to Bash-compatible globs
+convert_pattern() {
+    local pattern="$1"
+
+    # Remove leading slash if absolute
+    if [[ "$pattern" == /* ]]; then
+        pattern="${pattern:1}"
+    fi
+
+    # Convert "**/" to "**"
+    pattern="${pattern//\*\//**}"
+
+    # Convert "dir/" (trailing slash) to "dir/**" to match all contents
+    if [[ "$pattern" == */ ]]; then
+        pattern="${pattern}**"
+    fi
+
+    # Convert `apps/web/*` to `apps/web/[^/]**`
+    if [[ "$pattern" == *"/*" ]]; then
+        pattern="${pattern%\*}/[^/]*"
+    fi
+
+    # Convert `*` to `[^/]*` to match everything except a slash
+    pattern="${pattern//\*/[^/]*}"
+
+    # Convert `**` to `*` (because `**` should match across directories)
+    pattern="${pattern//\*\*/\*}"
+
+    echo "$pattern"
+}
+
+# Read and process the .service-associations file
+while IFS= read -r line; do
+    [[ -z "$line" || "$line" =~ ^# ]] && continue  # Skip empty lines and comments
+
+    pattern=$(awk '{print $1}' <<< "$line")
+    service=$(awk '{print $2}' <<< "$line")
+
+    [[ -z "$service" ]] && continue
+
+    if [[ "$pattern" == "!"* ]]; then
+        # Negation rule
+        negated_pattern=$(convert_pattern "${pattern:1}")
+        NEGATED_PATTERNS+=("$negated_pattern")
+    elif [[ "$pattern" == "/" ]]; then
+        # Default service for unmatched files
+        DEFAULT_SERVICE="$service"
+    else
+        converted_pattern=$(convert_pattern "$pattern")
+        SERVICE_PATTERNS["$converted_pattern"]="$service"
+    fi
+done < "$ASSOCIATIONS_FILE"
+
+if [[ -z "$DEFAULT_SERVICE" ]]; then
+    echo "Error: No fallback default (/) defined in '$ASSOCIATIONS_FILE'."
+    exit 1
+fi
+
+# Process the changed files
+while IFS= read -r file; do
+    matched_service=""
+
+    # Check for negation first
+    for neg_pattern in "${NEGATED_PATTERNS[@]}"; do
+        if [[ "$file" == $neg_pattern ]]; then
+            matched_service=""
+            break
+        fi
+    done
+
+    # Check for direct pattern matches
+    if [[ -z "$matched_service" ]]; then
+        for pattern in "${!SERVICE_PATTERNS[@]}"; do
+            if [[ "$file" == $pattern ]]; then
+                matched_service="${SERVICE_PATTERNS[$pattern]}"
+                break
+            fi
+        done
+    fi
+
+    # Apply fallback if no match found
+    if [[ -z "$matched_service" ]]; then
+        matched_service="$DEFAULT_SERVICE"
+    fi
+
+    echo "$matched_service"
+done < "$CHANGED_FILES_FILE"
