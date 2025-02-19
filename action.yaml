@@ -17,9 +17,9 @@ inputs:
     type: choice
     default: 'backstage'
     options: 
-    - backstage
-    - service-file
-    - codeowners
+      - backstage
+      - service-file
+      - codeowners
   catalog-filename:
     description: 'The name of the catalog file to search for in the tree (e.g. `catalog-info.yaml`)'
     required: false
