@@ -69,7 +69,7 @@ runs:
       shell: bash
       run: |
         services=""
-        services=$(${{ github.action_path }}/bin/getdx-file-service-reference-association changed_files.txt)
+        services=$(${{ github.action_path }}/bin/association-file-service-reference-association changed_files.txt)
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV

@@ -4,6 +4,8 @@ This GitHub Action is used to identify monorepository services as well as servic
 
 > Based on this [help article](https://help.getdx.com/en/articles/7669458-deployments#h_7d23ab886c).
 
+[Looking for a deployments action for GetDX? We got you fam!](https://github.com/Kajabi/getdx-deployment-identifier-action)
+
 ## Versions
 
 * [`main`](https://github.com/Kajabi/getdx-monorepo-service-identifier-action)

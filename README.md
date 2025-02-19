@@ -1,3 +1,3 @@
-# 📖 GitHub Action for Identifying Monorepo Services to send to GetDX
+# 📖 GitHub Action for Identifying Mono(repo/lith) Services to send to GetDX
 
 [Read the `docs`](./docs/index.md)
