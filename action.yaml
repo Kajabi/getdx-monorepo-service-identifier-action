@@ -2,7 +2,7 @@ name: 'GetDX Monorepo Service Identifier Action'
 description: |
   Reusable action for sending service identifiers to GetDX in a monorepo. Utilizes `catalog-info.yaml` documents as part 
   of the Backstage eco-system to identify services.
-author: 'internal-platform-and-automation'
+author: 'Kajabi'
 
 inputs:
   getdx-instance-name:
