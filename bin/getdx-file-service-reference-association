@@ -3,8 +3,9 @@
 set -euo pipefail
 
 ASSOCIATIONS_FILE=".service-associations"
-CHANGED_FILES_FILE="$1"
 
+# Make sure a file with the changed files list is provided (newline-separated)
+CHANGED_FILES_FILE="$1"
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <changed_files_list>"
     exit 1

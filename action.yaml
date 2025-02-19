@@ -51,6 +51,7 @@ runs:
 
     - name: Identify affected Backstage services
       id: identify-backstage
+      if: ${{ inputs.service-association-type == 'backstage' }}
       shell: bash
       run: |
         services=""
@@ -64,6 +65,7 @@ runs:
 
     - name: Identify affected services based on .service-associations file
       id: identify-service-associations-file
+      if: ${{ inputs.service-association-type == 'service-file' }}
       shell: bash
       run: |
         services=""
@@ -74,6 +76,7 @@ runs:
 
     - name: Identify affected services based on .github/CODEOWNERS file
       id: identify-codeowners
+      if: ${{ inputs.service-association-type == 'codeowners' }}
       shell: bash
       run: |
         services=""
