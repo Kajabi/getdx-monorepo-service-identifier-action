@@ -60,7 +60,7 @@ runs:
           services="$services $service"
         done < changed_files.txt
         # Format services list: remove duplicates, add quotes and commas
-        unique_services=$(echo $services | tr ' ' '\n' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd "," -)
+        unique_services=$(echo $services | tr ' ' '\n' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd ", " -)
         echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
