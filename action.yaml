@@ -98,7 +98,7 @@ runs:
       run: |
         json_payload=$(jq -n \
           --arg github_pull_id ${{ github.event.pull_request.id }} \
-          --arg services [${{ env.AFFECTED_SERVICES }}] \
+          --arg services '[${{ env.AFFECTED_SERVICES }}]' \
           '{
              github_pull_id: $github_pull_id,
              services: $services
