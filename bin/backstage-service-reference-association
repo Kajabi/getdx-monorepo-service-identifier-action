@@ -13,7 +13,6 @@ target_filename="$2"
 
 # Get the directory of the given file path
 search_dir=$(dirname "$file_path")
-echo "Searching for $target_filename in $search_dir"
 
 # Traverse upwards until the file is found
 while [ "$search_dir" != "/" ]; do
@@ -22,8 +21,8 @@ while [ "$search_dir" != "/" ]; do
         # This ensures we don't take a `System` entities name but
         # we get all Component type entity associations
         name_values=$(awk '
-            $1 == "kind:" && $2 == "Component" {found=1; next} 
-            found && $1 == "metadata:" {in_metadata=1; next} 
+            $1 == "kind:" && $2 == "Component" {found=1; next}
+            found && $1 == "metadata:" {in_metadata=1; next}
             in_metadata && $1 == "name:" {print $2; found=0; in_metadata=0}' "$search_dir/$target_filename" | tr -d ' ')
 
         # If name_value is not empty, print it and exit
