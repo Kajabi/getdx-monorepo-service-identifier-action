@@ -1,6 +1,6 @@
 name: 'GetDX Monorepo Service Identifier Action'
 description: |
-  Reusable action for sending service identifiers to GetDX in a monorepo. Utilizes `catalog-info.yaml` documents as part 
+  Reusable action for sending service identifiers to GetDX in a monorepo. Utilizes `catalog-info.yaml` documents as part
   of the Backstage eco-system to identify services.
 author: 'Kajabi'
 
@@ -16,7 +16,7 @@ inputs:
     required: false
     type: choice
     default: 'backstage'
-    options: 
+    options:
       - backstage
       - service-file
       - codeowners
@@ -38,7 +38,7 @@ runs:
   steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with: 
+      with:
         fetch-depth: ${{ inputs.fetch-depth }}
 
     - name: Get list of changed files
@@ -101,7 +101,7 @@ runs:
           echo "DEBUG: Debug is on so no API call will be made. Payload would be:"
           echo "JSON_PAYLOAD: $json_payload"
         else
-          RESPONSE_CODE=$(curl 
+          RESPONSE_CODE=$(curl \
             -X POST \
             https://${{ inputs.getdx-instance-name }}.getdx.net/api/deployments.setPullServices \
             -H "Content-Type: application/json" \
@@ -110,13 +110,13 @@ runs:
           )
 
           if [ "$RESPONSE_CODE" -ne 200 ]; then
-            ERROR_MESSAGE=$(jq -r '.message' response.txt 2>/dev/null || echo "Unknown error") 
-            ERROR_TYPE=$(jq -r '.error' response.txt 2>/dev/null || echo "Unknown error") 
+            ERROR_MESSAGE=$(jq -r '.message' response.txt 2>/dev/null || echo "Unknown error")
+            ERROR_TYPE=$(jq -r '.error' response.txt 2>/dev/null || echo "Unknown error")
 
             echo "Error response from API: HTTP status code $RESPONSE_CODE"
-            echo "Error type: $ERROR_TYPE" 
+            echo "Error type: $ERROR_TYPE"
             echo "Error message: $ERROR_MESSAGE"
 
-            exit 1 # Fail the step explicitly if an error is detected 
+            exit 1 # Fail the step explicitly if an error is detected
           fi
         fi
