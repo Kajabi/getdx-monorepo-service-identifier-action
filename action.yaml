@@ -61,8 +61,12 @@ runs:
           # Add each service to our list
           services="$services $service_list"
         done < changed_files.txt
-        # Format services list: remove duplicates, add quotes and commas with spaces
-        unique_services=$(echo "$services" | tr ' ' '\n' | grep -v '^$' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd ", " -)
+        # Format services list: split on whitespace, remove empties, sort unique, properly format JSON array
+        unique_services=$(echo "$services" | \
+          xargs -n1 | \
+          grep -v '^$' | \
+          sort -u | \
+          awk 'BEGIN {ORS=", "; print "["} {print "\""$0"\""} END {ORS=""; print "]"}')
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Identify affected services based on .service-associations file
