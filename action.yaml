@@ -57,15 +57,11 @@ runs:
         services=""
         while IFS= read -r file; do
           service=$(${{ github.action_path }}/bin/backstage-service-reference-association $file ${{ inputs.catalog-filename }})
-          if [ -n "$service" ]; then
-            if [ -z "$services" ]; then
-              services="$service"
-            else
-              services="$services, $service"
-            fi
-          fi
+          services="$services $service"
         done < changed_files.txt
-        unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        # Format services list: remove duplicates, add quotes and commas
+        unique_services=$(echo $services | tr ' ' '\n' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd "," -)
+        echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Identify affected services based on .service-associations file
@@ -76,6 +72,7 @@ runs:
         services=""
         services=$(${{ github.action_path }}/bin/association-file-service-reference-association changed_files.txt)
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Identify affected services based on .github/CODEOWNERS file
@@ -86,6 +83,7 @@ runs:
         services=""
         services=$(${{ github.action_path }}/bin/github-codeowners-service-reference-association changed_files.txt)
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
+        echo "Affected services: $unique_services"
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Post affected services
