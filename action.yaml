@@ -56,14 +56,13 @@ runs:
       run: |
         services=""
         while IFS= read -r file; do
-          service=$(${{ github.action_path }}/bin/backstage-service-reference-association $file ${{ inputs.catalog-filename }})
-          # Split the service string into an array and process each service individually
-          for s in $service; do
-            services="$services $s"
-          done
+          # Get service names for this file
+          service_list=$(${{ github.action_path }}/bin/backstage-service-reference-association $file ${{ inputs.catalog-filename }})
+          # Add each service to our list
+          services="$services $service_list"
         done < changed_files.txt
         # Format services list: remove duplicates, add quotes and commas with spaces
-        unique_services=$(echo $services | tr ' ' '\n' | grep -v '^$' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd ", " -)
+        unique_services=$(echo "$services" | tr ' ' '\n' | grep -v '^$' | sort -u | sed 's/^/"/' | sed 's/$/"/' | paste -sd ", " -)
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
 
     - name: Identify affected services based on .service-associations file
