@@ -57,7 +57,13 @@ runs:
         services=""
         while IFS= read -r file; do
           service=$(${{ github.action_path }}/bin/backstage-service-reference-association $file ${{ inputs.catalog-filename }})
-          services="$services $service"
+          if [ -n "$service" ]; then
+            if [ -z "$services" ]; then
+              services="$service"
+            else
+              services="$services, $service"
+            fi
+          fi
         done < changed_files.txt
         unique_services=$(echo $services | xargs -n1 | sort -u | xargs)
         echo "AFFECTED_SERVICES=$unique_services" >> $GITHUB_ENV
